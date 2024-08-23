@@ -142,6 +142,7 @@ class Game
         snake.update();
         checkWall();
         checkEating();
+        checkSelfCollision();
     }
 
     void checkEating()
@@ -159,6 +160,19 @@ class Game
         if(snake.body[0].x == cellCount || snake.body[0].x == -1 || snake.body[0].y == cellCount || snake.body[0].y == -1)
         {
             gameOver=true;
+            cout<<endl<<"Hit the world border";
+            displayScore();
+        }
+    }
+
+    void checkSelfCollision()
+    {
+        deque<Vector2> headLessBody = snake.body;
+        headLessBody.pop_front();
+        if(elementInDeque(snake.body[0],headLessBody))
+        {
+            gameOver=true;
+            cout<<endl<<"Self Collision";
             displayScore();
         }
     }
@@ -197,7 +211,7 @@ int main()
             game.Update(); 
             // cout<<game.snake.body[0].x<<" "<<game.snake.body[1].y<<endl;              //FOR DEBUGGING
         }
-        // key = GetKeyPressed();
+
         switch (GetKeyPressed())
         {
             case (KEY_UP):
