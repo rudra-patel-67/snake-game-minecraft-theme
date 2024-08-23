@@ -288,7 +288,7 @@ int main()
         if(game.gameOver)
         {
             DrawText("Game Over", cellSize*(cellCount/2.5),  offset + cellSize*(cellCount/2.5), 60, darkGreen);
-            DrawText("Press R to Restart", cellSize*(cellCount/2.3)+5,  offset + cellSize*(cellCount/2.5)+70, 25, darkGreen);
+            DrawText("Press R to Restart", cellSize*(cellCount/2.3)+10,  offset + cellSize*(cellCount/2.5)+70, 25, darkGreen);
             DrawText("Press Esc to Quit", cellSize*(cellCount/2.2)+5,  offset + cellSize*(cellCount/2.5)+95, 25, darkGreen);
         }
 
