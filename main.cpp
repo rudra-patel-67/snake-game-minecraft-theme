@@ -135,8 +135,8 @@ class Game
     {
         if(!gameOver)
         {
-            // snake.draw();
-            // food.draw();
+            snake.draw();
+            food.draw();
         }
     }
 
@@ -263,7 +263,7 @@ int main()
         {
             ClearBackground(green);
             DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)cellSize*cellCount+10,(float)cellSize*cellCount+10},5,darkGreen);
-            DrawText("Zombie Seige x Minecraft", offset - 5, 20, 40, darkGreen);
+            DrawText("Zombie Siege x Minecraft", offset - 5, 20, 40, darkGreen);
             DrawText(TextFormat("%i",game.score),offset - 5, offset + cellSize*cellCount+10, 40, darkGreen);
             game.Draw();
         }
