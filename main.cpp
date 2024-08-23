@@ -9,6 +9,7 @@ Color darkGreen = {43, 51, 24, 255};
 
 int cellSize = 30;
 int cellCount = 25;
+int offset = 75;
 
 double lastUpdateTime = 0;
 
@@ -66,9 +67,9 @@ class Snake
                 int x = body[i].x;
                 int y = body[i].y;
                 if(i==0)
-                DrawTexture(headTexture,x*cellSize,y*cellSize,WHITE);
+                DrawTexture(headTexture,offset + x*cellSize,offset + y*cellSize,WHITE);
                 else
-                DrawTexture(texture,x*cellSize,y*cellSize,WHITE);
+                DrawTexture(texture,offset + x*cellSize,offset + y*cellSize,WHITE);
             }
         }
 
@@ -102,7 +103,7 @@ class Food
 
     void draw() 
     {
-        DrawTexture(texture,position.x*cellSize,position.y*cellSize,WHITE);
+        DrawTexture(texture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
     }
 
     Vector2 genRandomPos(deque<Vector2> snakeBody)
@@ -122,33 +123,39 @@ class Food
 
 class Game
 {
-    int score=0;
     public: 
     Food food = Food(snake.body);
     Snake snake = Snake();
+    Sound s_Eat = LoadSound("assets/audio/eating.mp3");
+    Sound s_Wall = LoadSound("assets/audio/hit-the-wall.mp3");
     bool gameOver=false;
+    int score=0;
 
     void Draw()
     {
         if(!gameOver)
         {
-            snake.draw();
-            food.draw();
+            // snake.draw();
+            // food.draw();
         }
     }
 
     void Update()
     {
-        snake.update();
-        checkWall();
-        checkEating();
-        checkSelfCollision();
+        if(!gameOver)
+        {
+            snake.update();
+            checkWall();
+            checkEating();
+            checkSelfCollision();
+        }
     }
 
     void checkEating()
     {
         if(Vector2Equals(snake.body[0],food.position))
         {
+            PlaySound(s_Eat);
             food.position = food.genRandomPos(snake.body);
             snake.addSegment = true;
             score++;
@@ -159,6 +166,7 @@ class Game
     {
         if(snake.body[0].x == cellCount || snake.body[0].x == -1 || snake.body[0].y == cellCount || snake.body[0].y == -1)
         {
+            PlaySound(s_Wall);
             gameOver=true;
             cout<<endl<<"Hit the world border";
             displayScore();
@@ -196,16 +204,20 @@ class Game
 
 int main() 
 {
-    InitWindow(cellSize*cellCount, cellSize*cellCount, "Snake Game");
+    InitWindow(2*offset + cellSize*cellCount, 2*offset + cellSize*cellCount, "Snake Game");
+    InitAudioDevice();
     SetTargetFPS(60);
 
     Game game = Game();
+    Music bgm = LoadMusicStream("assets/audio/bgm.mp3");
+    PlayMusicStream(bgm);
+    float vol = 1;
 
-    // KeyboardKey key;
     while (WindowShouldClose() == false)
     {
         BeginDrawing();
-
+        UpdateMusicStream(bgm);
+        
         if(eventTriggered(0.2))
         {
             game.Update(); 
@@ -250,12 +262,41 @@ int main()
         if(!game.gameOver)
         {
             ClearBackground(green);
+            DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)cellSize*cellCount+10,(float)cellSize*cellCount+10},5,darkGreen);
+            DrawText("Zombie Seige x Minecraft", offset - 5, 20, 40, darkGreen);
+            DrawText(TextFormat("%i",game.score),offset - 5, offset + cellSize*cellCount+10, 40, darkGreen);
             game.Draw();
         }
+        
         if(IsKeyPressed(KEY_R))
         game.reset();
+        if(IsKeyPressed(KEY_O))
+        game.gameOver=true;
+ 
+        //Volume Controls   
+        if(IsKeyPressed(KEY_KP_ADD) && vol < 1)
+        {
+            vol+=0.10;
+            SetMusicVolume(bgm,vol);
+        }
+        if(IsKeyPressed(KEY_KP_SUBTRACT) && vol >= 0 )
+        {
+            vol-=0.10;
+            SetMusicVolume(bgm,vol);
+        }
+        
+        if(game.gameOver)
+        {
+            DrawText("Game Over", cellSize*(cellCount/2.5),  offset + cellSize*(cellCount/2.5), 60, darkGreen);
+            DrawText("Press R to Restart", cellSize*(cellCount/2.3)+5,  offset + cellSize*(cellCount/2.5)+70, 25, darkGreen);
+            DrawText("Press Esc to Quit", cellSize*(cellCount/2.2)+5,  offset + cellSize*(cellCount/2.5)+95, 25, darkGreen);
+        }
+
         EndDrawing();    
     }
+    StopMusicStream(bgm);
+    UnloadMusicStream(bgm);
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
