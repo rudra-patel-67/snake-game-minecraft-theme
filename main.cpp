@@ -87,23 +87,30 @@ class Food
 {
     public:
     Vector2 position;
-    Texture2D texture;
+    Texture2D foodTexture;
+    Texture2D sFoodTextue;
+    
     Food(deque<Vector2> snakeBody)
     {
-        Image image = LoadImage("assets/steve-food.png");
-        texture = LoadTextureFromImage(image);
-        UnloadImage(image);
+        Image foodImage = LoadImage("assets/villager-food.png");
+        Image sFoodImage = LoadImage("assets/steve-food.png");
+        foodTexture = LoadTextureFromImage(foodImage);
+        sFoodTexture = LoadTextureFromImage(sFoodImage);
+        UnloadImage(foodImage);
+        UnloadImage(sFoodImage);
         position=genRandomPos(snakeBody);
     }
 
     ~Food()
     {
-        UnloadTexture(texture);
+        UnloadTexture(foodTexture);
+        UnloadTexture(sFoodTexture);
+
     }
 
     void draw() 
     {
-        DrawTexture(texture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
+        DrawTexture(foodTexture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
     }
 
     Vector2 genRandomPos(deque<Vector2> snakeBody)
