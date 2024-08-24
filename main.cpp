@@ -10,7 +10,8 @@ Color darkGreen = {43, 51, 24, 255};
 int cellSize = 30;
 int cellCount = 25;
 int offset = 75;
-
+int playground = cellSize * cellCount;
+int center = offset + (playground/2);
 double lastUpdateTime = 0;
 
 bool eventTriggered(double interval)
@@ -39,7 +40,7 @@ bool elementInDeque(Vector2 element, deque<Vector2> deque)
 class Snake
 {
     public:
-        deque<Vector2> body = {Vector2{6,12},Vector2{5,12},Vector2{4,12}};
+        deque<Vector2> body = {Vector2{6,17},Vector2{5,17},Vector2{4,17}};
         Vector2 direction = {1,0};
         Texture2D texture, headTexture;
         bool addSegment = false;
@@ -87,30 +88,41 @@ class Food
 {
     public:
     Vector2 position;
-    Texture2D foodTexture;
-    Texture2D sFoodTextue;
-    
+    Texture2D villagerFTexture;
+    Texture2D steveFTexture;
+    int count=0;
+    bool ateSuperFood = false;
+
     Food(deque<Vector2> snakeBody)
     {
-        Image foodImage = LoadImage("assets/villager-food.png");
-        Image sFoodImage = LoadImage("assets/steve-food.png");
-        foodTexture = LoadTextureFromImage(foodImage);
-        sFoodTexture = LoadTextureFromImage(sFoodImage);
-        UnloadImage(foodImage);
-        UnloadImage(sFoodImage);
+        Image villagerFood = LoadImage("assets/villager-food.png");
+        Image steveFood = LoadImage("assets/steve-food.png");
+        villagerFTexture = LoadTextureFromImage(villagerFood);
+        steveFTexture = LoadTextureFromImage(steveFood);
+        UnloadImage(villagerFood);
+        UnloadImage(steveFood);
         position=genRandomPos(snakeBody);
     }
 
     ~Food()
     {
-        UnloadTexture(foodTexture);
-        UnloadTexture(sFoodTexture);
+        UnloadTexture(villagerFTexture);
+        UnloadTexture(steveFTexture);
 
     }
 
     void draw() 
     {
-        DrawTexture(foodTexture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
+        if(count==5)
+        DrawTexture(steveFTexture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
+        else
+        DrawTexture(villagerFTexture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
+    }
+
+    void superFood()
+    {
+        ateSuperFood=(count==5)?true:false;
+    
     }
 
     Vector2 genRandomPos(deque<Vector2> snakeBody)
@@ -155,6 +167,7 @@ class Game
             checkWall();
             checkEating();
             checkSelfCollision();
+            food.superFood();
         }
     }
 
@@ -163,9 +176,23 @@ class Game
         if(Vector2Equals(snake.body[0],food.position))
         {
             PlaySound(s_Eat);
+            if(food.ateSuperFood)
+            {
+                food.count=0;
+                for(int i=0 ; i<3 ; i++)
+                {
+                    snake.addSegment = true;
+                    snake.update();
+                }
+                score+=3;
+            }
+            else
+            {
+                snake.addSegment = true;
+                score++;
+                food.count++;
+            }
             food.position = food.genRandomPos(snake.body);
-            snake.addSegment = true;
-            score++;
         }
     }
 
@@ -206,12 +233,13 @@ class Game
         food.position = food.genRandomPos(snake.body);
         gameOver=false;
         score=0;
+        food.count=0;
     }
 };
 
 int main() 
 {
-    InitWindow(2*offset + cellSize*cellCount, 2*offset + cellSize*cellCount, "Snake Game");
+    InitWindow(2*offset + playground, 2*offset + playground, "Snake Game");
     InitAudioDevice();
     SetTargetFPS(60);
 
@@ -269,9 +297,9 @@ int main()
         if(!game.gameOver)
         {
             ClearBackground(green);
-            DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)cellSize*cellCount+10,(float)cellSize*cellCount+10},5,darkGreen);
+            DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
             DrawText("Zombie Siege x Minecraft", offset - 5, 20, 40, darkGreen);
-            DrawText(TextFormat("%i",game.score),offset - 5, offset + cellSize*cellCount+10, 40, darkGreen);
+            DrawText(TextFormat("%i",game.score),offset - 5, offset + playground+10, 40, darkGreen);
             game.Draw();
         }
         
@@ -292,11 +320,13 @@ int main()
             SetMusicVolume(bgm,vol);
         }
         
+
+
         if(game.gameOver)
         {
-            DrawText("Game Over", cellSize*(cellCount/2.5),  offset + cellSize*(cellCount/2.5), 60, darkGreen);
-            DrawText("Press R to Restart", cellSize*(cellCount/2.3)+10,  offset + cellSize*(cellCount/2.5)+70, 25, darkGreen);
-            DrawText("Press Esc to Quit", cellSize*(cellCount/2.2)+5,  offset + cellSize*(cellCount/2.5)+95, 25, darkGreen);
+            DrawText("Game Over",center-offset*2, center - 60, 60, darkGreen);
+            DrawText("Press R to Restart", center-offset*1.5, center + 5, 25, darkGreen);
+            DrawText("Press Esc to Quit", center-offset*1.35, center + 35, 25, darkGreen);
         }
 
         EndDrawing();    
