@@ -247,17 +247,41 @@ int main()
     InitWindow(2*offset + playground, 2*offset + playground, "Snake Game");
     InitAudioDevice();
     SetTargetFPS(60);
-
+    int frames = 0;
     Game game = Game();
     Music bgm = LoadMusicStream("assets/audio/bgm.ogg");
+    Image wall = LoadImageAnim("assets/wall.gif",&frames);
+    Texture2D wallTexture = LoadTextureFromImage(wall);
+
+    int currentFrame = 0;        // Index of the current frame
+    float frameTime = 0.1f;      // Time in seconds to display each frame
+    float timer = 0.0f;
+
+    // for(int i=1;i<=7;i++)
+    // wallTest[i]=LoadImage(TextFormat("assets/frame-v1/%d.png",i));
+    
     PlayMusicStream(bgm);
     float vol = 1;
 
     while (WindowShouldClose() == false)
     {
+
+        timer += GetFrameTime();  // Increment timer by frame time
+
+        if (timer >= frameTime && !game.gameOver) {
+            // Move to the next frame
+            currentFrame++;
+            timer = 0.0f;  // Reset timer
+
+            if (currentFrame >= frames) currentFrame = 0;  // Loop animation
+
+            // Update texture data to current frame (no need to reload the texture completely)
+            UpdateTexture(wallTexture, (unsigned char *)wall.data + currentFrame * wall.width * wall.height * 4);
+        }
+
         BeginDrawing();
         UpdateMusicStream(bgm);
-        
+
         if(eventTriggered(0.2))
         {
             game.Update(); 
@@ -302,10 +326,10 @@ int main()
         if(!game.gameOver)
         {
             ClearBackground(green);
-            DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
-            DrawText("Zombie Siege x Minecraft", offset - 5, 20, 40, darkGreen);
-            DrawText(TextFormat("%i",game.score),offset - 5, offset + playground+10, 40, darkGreen);
-            DrawText(TextFormat("Volume : %g %",copysign((ceilf(vol*100)),1.0f)), playground+10-offset, playground+offset+10, 25, darkGreen);
+            // DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
+            DrawText("Zombie Siege x Minecraft", offset - 5, 10, 35, darkGreen);
+            DrawText(TextFormat("%i",game.score),offset - 5, offset + playground+10+cellSize, 40, darkGreen);
+            DrawText(TextFormat("Volume : %g %",copysign((ceilf(vol*100)),1.0f)), playground+10-offset, playground+offset+10+cellSize, 25, darkGreen);
             game.Draw();
         }
         
@@ -352,6 +376,15 @@ int main()
             DrawText("Game Over",center-offset*2, center - 60, 60, darkGreen);
             DrawText("Press R to Restart", center-offset*1.5, center + 5, 25, darkGreen);
             DrawText("Press Esc to Quit", center-offset*1.35, center + 35, 25, darkGreen);
+        }
+
+        for(int i = 0; i<=cellCount+1; i++)
+        {
+            for(int j = 0; j<=cellCount+1; j++)
+            {
+                if(i==0 || j == 0 || i==cellCount+1 || j == cellCount+1)
+                DrawTexture(wallTexture, offset-cellSize+(i*cellSize), offset-cellSize+(j*cellSize), WHITE);
+            }
         }
 
         EndDrawing();    
