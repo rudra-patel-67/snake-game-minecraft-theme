@@ -114,10 +114,15 @@ class Food
     void draw() 
     {
         if(count==5)
-        DrawTexture(steveFTexture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
+        DrawTextureEx(steveFTexture, Vector2Add({(float)offset-5, (float)offset-5}, Vector2Scale(position, (float)cellSize)), 0, 1.1, WHITE);
         else
-        DrawTexture(villagerFTexture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
+        DrawTextureEx(villagerFTexture, Vector2Add({(float)offset, (float)offset}, Vector2Scale(position, (float)cellSize)), 0, 0.80, WHITE);
+            // DrawTextureEx(steveFTexture, Vector2Add({(float)offset, (float)offset}, Vector2Scale(position, (float)cellSize)), 0, 1.1, WHITE);
+        // DrawTexture(villagerFTexture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
+        // DrawTextureEx(villagerFTexture, Vector2Add({(float)offset, (float)offset}, Vector2Scale(position, (float)cellSize)), 0, 0.75, WHITE);
     }
+
+    
 
     void superFood()
     {
@@ -300,6 +305,7 @@ int main()
             DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
             DrawText("Zombie Siege x Minecraft", offset - 5, 20, 40, darkGreen);
             DrawText(TextFormat("%i",game.score),offset - 5, offset + playground+10, 40, darkGreen);
+            DrawText(TextFormat("Volume : %g %",copysign((ceilf(vol*100)),1.0f)), playground+10-offset, playground+offset+10, 25, darkGreen);
             game.Draw();
         }
         
@@ -309,17 +315,36 @@ int main()
         game.gameOver=true;
  
         //Volume Controls   
+        float tempVol;
         if(IsKeyPressed(KEY_KP_ADD) && vol < 1)
         {
-            vol+=0.10;
+            vol+=0.05;
             SetMusicVolume(bgm,vol);
+            SetSoundVolume(game.s_Eat,vol);
+            SetSoundVolume(game.s_Wall,vol);
         }
-        if(IsKeyPressed(KEY_KP_SUBTRACT) && vol >= 0 )
+        if(IsKeyPressed(KEY_KP_SUBTRACT) && vol > 0.00 )
         {
-            vol-=0.10;
+            vol-=0.05;
             SetMusicVolume(bgm,vol);
+            SetSoundVolume(game.s_Eat,vol);
+            SetSoundVolume(game.s_Wall,vol);
         }
-        
+        if(IsKeyPressed(KEY_M) && vol > 0)
+        {
+            tempVol = vol;
+            vol = 0;
+            SetMusicVolume(bgm,vol);
+            SetSoundVolume(game.s_Eat,vol);
+            SetSoundVolume(game.s_Wall,vol);
+        }
+        else if(vol==0 && IsKeyPressed(KEY_M))
+        {
+            vol = tempVol;
+            SetMusicVolume(bgm,vol);
+            SetSoundVolume(game.s_Eat,vol);
+            SetSoundVolume(game.s_Wall,vol);
+        }
 
 
         if(game.gameOver)
