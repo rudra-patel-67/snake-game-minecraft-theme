@@ -150,8 +150,8 @@ class Game
     public: 
     Food food = Food(snake.body);
     Snake snake = Snake();
-    Sound s_Eat = LoadSound("assets/audio/eating.mp3");
-    Sound s_Wall = LoadSound("assets/audio/hit-the-wall.mp3");
+    Sound s_Eat = LoadSound("assets/audio/eating.ogg");
+    Sound s_Wall = LoadSound("assets/audio/hit-the-wall.ogg");
     bool gameOver=false;
     int score=0;
 
@@ -249,7 +249,7 @@ int main()
     SetTargetFPS(60);
 
     Game game = Game();
-    Music bgm = LoadMusicStream("assets/audio/bgm.mp3");
+    Music bgm = LoadMusicStream("assets/audio/bgm.ogg");
     PlayMusicStream(bgm);
     float vol = 1;
 
