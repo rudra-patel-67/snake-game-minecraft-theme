@@ -338,9 +338,7 @@ int main()
 
         //Drawing
         if(!game.gameOver)
-        {
             game.Draw();
-        }
         DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
         DrawRectangleLinesEx(Rectangle{(float)offset-cellSize,(float)offset-cellSize,(float)playground+cellSize*2,(float)playground+cellSize*2},5,darkGreen);
         DrawText("Zombie Siege x Minecraft", offset - cellSize, 8, 35, darkGreen);
