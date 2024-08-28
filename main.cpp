@@ -154,6 +154,7 @@ class Game
     Sound s_Wall = LoadSound("assets/audio/hit-the-wall.ogg");
     bool gameOver=false;
     int score=0;
+    int highScore;
 
     void Draw()
     {
@@ -251,24 +252,38 @@ int main()
     Game game = Game();
     Music bgm = LoadMusicStream("assets/audio/bgm.ogg");
     Image wall = LoadImageAnim("assets/wall.gif",&frames);
+    Image volumeImg[4];
+    volumeImg[0]=LoadImage("assets/volMute.png");
+    volumeImg[1]=LoadImage("assets/lowVol.png");
+    volumeImg[2]=LoadImage("assets/halfVol.png");
+    volumeImg[3]=LoadImage("assets/fullVol.png");
+
+    Texture2D volTexture[4];
+    for(int i=0; i<4 ; i++)
+    {
+        volTexture[i] = LoadTextureFromImage(volumeImg[i]);
+        UnloadImage(volumeImg[i]);
+    }
+
+
     Texture2D wallTexture = LoadTextureFromImage(wall);
 
     int currentFrame = 0;        // Index of the current frame
     float frameTime = 0.1f;      // Time in seconds to display each frame
     float timer = 0.0f;
 
-    // for(int i=1;i<=7;i++)
-    // wallTest[i]=LoadImage(TextFormat("assets/frame-v1/%d.png",i));
-    
     PlayMusicStream(bgm);
     float vol = 1;
+    float volPercentage;
 
     while (WindowShouldClose() == false)
     {
+        BeginDrawing();
+        ClearBackground(green);
 
         timer += GetFrameTime();  // Increment timer by frame time
 
-        if (timer >= frameTime && !game.gameOver) {
+        if (timer >= frameTime) {
             // Move to the next frame
             currentFrame++;
             timer = 0.0f;  // Reset timer
@@ -278,9 +293,8 @@ int main()
             // Update texture data to current frame (no need to reload the texture completely)
             UpdateTexture(wallTexture, (unsigned char *)wall.data + currentFrame * wall.width * wall.height * 4);
         }
-
-        BeginDrawing();
         UpdateMusicStream(bgm);
+        volPercentage = copysign((ceilf(vol*100)),1.0f);
 
         if(eventTriggered(0.2))
         {
@@ -325,13 +339,14 @@ int main()
         //Drawing
         if(!game.gameOver)
         {
-            ClearBackground(green);
-            // DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
-            DrawText("Zombie Siege x Minecraft", offset - 5, 10, 35, darkGreen);
-            DrawText(TextFormat("%i",game.score),offset - 5, offset + playground+10+cellSize, 40, darkGreen);
-            DrawText(TextFormat("Volume : %g %",copysign((ceilf(vol*100)),1.0f)), playground+10-offset, playground+offset+10+cellSize, 25, darkGreen);
             game.Draw();
         }
+        DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
+        DrawRectangleLinesEx(Rectangle{(float)offset-cellSize,(float)offset-cellSize,(float)playground+cellSize*2,(float)playground+cellSize*2},5,darkGreen);
+        DrawText("Zombie Siege x Minecraft", offset - cellSize, 8, 35, darkGreen);
+        DrawText(TextFormat("%i",game.score),offset - cellSize + 5, offset + playground+cellSize+3, 40, darkGreen);
+        DrawTexture(((volPercentage==0)?volTexture[0]:(volPercentage>0&&volPercentage<40)?volTexture[1]:(volPercentage>=40&&volPercentage<70)?volTexture[2]:volTexture[3]),playground,playground+offset+10+cellSize,WHITE);
+        DrawText(TextFormat(" : %g %",copysign((ceilf(vol*100)),1.0f)), playground+cellSize, playground+offset+10+cellSize, 25, darkGreen);
         
         if(IsKeyPressed(KEY_R))
         game.reset();
