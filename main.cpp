@@ -37,13 +37,22 @@ bool elementInDeque(Vector2 element, deque<Vector2> deque)
     return false;
 }
 
+int centerOf(int centerOfThis, char *text,int fSize)
+{   
+    int length = MeasureText(text,fSize);
+    return centerOfThis-(length/2);
+}
+
 class Snake
 {
     public:
         deque<Vector2> body = {Vector2{6,17},Vector2{5,17},Vector2{4,17}};
         Vector2 direction = {1,0};
         Texture2D texture, headTexture;
-        bool addSegment = false;
+        int segmentToAdd=0;
+        int segmentAdded=0;
+        float interpolationFactor = 0.0f; // For smooth movement
+        Vector2 nextHeadPosition; // To store the position of the next head
         
         Snake()
         {
@@ -74,14 +83,49 @@ class Snake
             }
         }
 
+        // void update()
+        // {
+        //     // for(int i = 1 ; i <= segmentToAdd ; i++)
+        //     if(segmentAdded<segmentToAdd && eventTriggered(0.2)){
+        //         body.emplace_back(Vector2Add(body[0],direction));
+        //         segmentAdded++;
+        //         return;
+        //     }        
+        //     if(segmentAdded>=segmentToAdd)
+        //     segmentToAdd=0;
+        //     Vector2 temp1 = body[0];
+        //     Vector2 temp2;
+        //     body[0].x+=direction.x;
+        //     body[0].y+=direction.y;
+        //     for(unsigned int i=1;i<body.size();i++)
+        //     {
+        //             temp2=body[i];
+        //             body[i]=temp1;
+        //             temp1=temp2;
+        //     }
+        //     // free(&temp2);
+        // }
+
         void update()
         {
-            body.push_front(Vector2Add(body[0],direction));
-            if(addSegment)
-            addSegment=false;
+            // Move the snake's head in the current direction
+            Vector2 newHead = Vector2Add(body[0], direction);
+            // Add the new head to the front
+            body.push_front(newHead);
+            // Handle the addition of new segments
+            if (segmentToAdd > 0)
+            {
+                segmentToAdd--;  // Reduce the number of segments left to add
+            }
             else
-            body.pop_back();
+            {
+                // Remove the last segment if no growth is needed
+                body.pop_back();
+            }
         }
+
+        
+
 };
 
 class Food 
@@ -113,7 +157,7 @@ class Food
 
     void draw() 
     {
-        if(count==5)
+        if(count==0)
         DrawTextureEx(steveFTexture, Vector2Add({(float)offset-5, (float)offset-5}, Vector2Scale(position, (float)cellSize)), 0, 1.1, WHITE);
         else
         DrawTextureEx(villagerFTexture, Vector2Add({(float)offset, (float)offset}, Vector2Scale(position, (float)cellSize)), 0, 0.80, WHITE);
@@ -122,12 +166,9 @@ class Food
         // DrawTextureEx(villagerFTexture, Vector2Add({(float)offset, (float)offset}, Vector2Scale(position, (float)cellSize)), 0, 0.75, WHITE);
     }
 
-    
-
     void superFood()
     {
-        ateSuperFood=(count==5)?true:false;
-    
+        ateSuperFood=(count==0)?true:false;
     }
 
     Vector2 genRandomPos(deque<Vector2> snakeBody)
@@ -155,7 +196,8 @@ class Game
     bool gameOver=false;
     int score=0;
     int highScore;
-
+    int timer = 0;
+    
     void Draw()
     {
         if(!gameOver)
@@ -170,12 +212,17 @@ class Game
         if(!gameOver)
         {
             snake.update();
+            food.superFood();
             checkWall();
             checkEating();
             checkSelfCollision();
-            food.superFood();
         }
     }
+
+    // void snakeUpdate()
+    // {
+    //     if(eventTriggered(0.1))
+    // }
 
     void checkEating()
     {
@@ -184,19 +231,16 @@ class Game
             PlaySound(s_Eat);
             if(food.ateSuperFood)
             {
-                food.count=0;
-                for(int i=0 ; i<3 ; i++)
-                {
-                    snake.addSegment = true;
-                    snake.update();
-                }
-                score+=3;
+                // food.count=1;
+                snake.segmentToAdd=5;
+                // snake.update();
+                score+=5;
             }
             else
             {
-                snake.addSegment = true;
+                snake.segmentToAdd = 1;
                 score++;
-                food.count++;
+                // food.count++;
             }
             food.position = food.genRandomPos(snake.body);
         }
@@ -243,28 +287,69 @@ class Game
     }
 };
 
+void movement(Game &game)
+{
+    switch (GetKeyPressed())
+    {
+        case (KEY_UP):
+        case (KEY_W):
+            if(game.snake.direction.y !=1)
+            game.snake.direction = {0,-1};
+            break;
+        
+        case (KEY_DOWN):
+        case (KEY_S):
+            if(game.snake.direction.y !=-1)
+            game.snake.direction = {0,1};
+            break;
+        
+        case (KEY_RIGHT):
+        case (KEY_D):
+            if(game.snake.direction.x !=-1)
+            game.snake.direction = {1,0};
+            break;
+        
+        case (KEY_LEFT):
+        case (KEY_A):
+            if(game.snake.direction.x !=1)
+            game.snake.direction = {-1,0};
+            break;
+        
+        case (KEY_R):
+            game.reset();
+            break;
+        
+        case (KEY_O):
+            game.gameOver=true;
+            break;
+
+        default:
+            break;
+    }
+}
+
 int main() 
 {
-    InitWindow(2*offset + playground, 2*offset + playground, "Snake Game");
+    int fps=GetFPS();
+    InitWindow(2*offset + playground, 2*offset + playground, TextFormat("Snake Game \t FPS : %d",fps));
     InitAudioDevice();
-    SetTargetFPS(60);
+    // SetTargetFPS(1000);
     int frames = 0;
+    bool gamePaused = false;
     Game game = Game();
     Music bgm = LoadMusicStream("assets/audio/bgm.ogg");
     Image wall = LoadImageAnim("assets/wall.gif",&frames);
     Image volumeImg[4];
-    volumeImg[0]=LoadImage("assets/volMute.png");
-    volumeImg[1]=LoadImage("assets/lowVol.png");
-    volumeImg[2]=LoadImage("assets/halfVol.png");
-    volumeImg[3]=LoadImage("assets/fullVol.png");
-
+    const char *imgAssets[] = {"assets/volMute.png","assets/lowVol.png","assets/halfVol.png","assets/fullVol.png"};
     Texture2D volTexture[4];
-    for(int i=0; i<4 ; i++)
-    {
+    char title[]= "Zombie Siege x Minecraft";
+    
+    //Loading volume icon texture
+    for(int i=0;i<4;i++){
+        volumeImg[i]=LoadImage(imgAssets[i]);
         volTexture[i] = LoadTextureFromImage(volumeImg[i]);
         UnloadImage(volumeImg[i]);
     }
-
 
     Texture2D wallTexture = LoadTextureFromImage(wall);
 
@@ -278,79 +363,37 @@ int main()
 
     while (WindowShouldClose() == false)
     {
+        if(IsKeyPressed(KEY_P)) gamePaused=!gamePaused;
+        
         BeginDrawing();
         ClearBackground(green);
 
-        timer += GetFrameTime();  // Increment timer by frame time
+        if(!gamePaused){
+            timer += GetFrameTime();  // Increment timer by frame time
 
-        if (timer >= frameTime) {
-            // Move to the next frame
-            currentFrame++;
-            timer = 0.0f;  // Reset timer
+            //Wall Animation
+            if (timer >= frameTime) {
+                // Move to the next frame
+                currentFrame++;
+                timer = 0.0f;  // Reset timer
+                if (currentFrame >= frames) currentFrame = 0;  // Loop animation
+                // Update texture data to current frame (no need to reload the texture completely)
+                UpdateTexture(wallTexture, (unsigned char *)wall.data + currentFrame * wall.width * wall.height * 4);
+            }
+            
+            UpdateMusicStream(bgm);
+            volPercentage = copysign((ceilf(vol*100)),1.0f);
 
-            if (currentFrame >= frames) currentFrame = 0;  // Loop animation
-
-            // Update texture data to current frame (no need to reload the texture completely)
-            UpdateTexture(wallTexture, (unsigned char *)wall.data + currentFrame * wall.width * wall.height * 4);
-        }
-        UpdateMusicStream(bgm);
-        volPercentage = copysign((ceilf(vol*100)),1.0f);
-
-        if(eventTriggered(0.2))
-        {
+            movement(game);
+            if(eventTriggered(0.2) && !gamePaused)
             game.Update(); 
-            // cout<<game.snake.body[0].x<<" "<<game.snake.body[1].y<<endl;              //FOR DEBUGGING
+            // game.snakeUpdate();
+            // {
+                // cout<<game.snake.body[0].x<<" "<<game.snake.body[1].y<<endl;              //FOR DEBUGGING
+            // }
+            
         }
 
-        switch (GetKeyPressed())
-        {
-            case (KEY_UP):
-            case (KEY_W):
-                if(game.snake.direction.y !=1)
-                game.snake.direction = {0,-1};
-                break;
-            
-            case (KEY_DOWN):
-            case (KEY_S):
-                if(game.snake.direction.y !=-1)
-                game.snake.direction = {0,1};
-                break;
-            
-            case (KEY_RIGHT):
-            case (KEY_D):
-                if(game.snake.direction.x !=-1)
-                game.snake.direction = {1,0};
-                break;
-            
-            case (KEY_LEFT):
-            case (KEY_A):
-                if(game.snake.direction.x !=1)
-                game.snake.direction = {-1,0};
-                break;
-            
-            case (KEY_R):
-                game.reset();
-                break;
-
-            default:
-                break;
-        }
-
-        //Drawing
-        if(!game.gameOver)
-            game.Draw();
-        DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
-        DrawRectangleLinesEx(Rectangle{(float)offset-cellSize,(float)offset-cellSize,(float)playground+cellSize*2,(float)playground+cellSize*2},5,darkGreen);
-        DrawText("Zombie Siege x Minecraft", offset - cellSize, 8, 35, darkGreen);
-        DrawText(TextFormat("%i",game.score),offset - cellSize + 5, offset + playground+cellSize+3, 40, darkGreen);
-        DrawTexture(((volPercentage==0)?volTexture[0]:(volPercentage>0&&volPercentage<40)?volTexture[1]:(volPercentage>=40&&volPercentage<70)?volTexture[2]:volTexture[3]),playground,playground+offset+10+cellSize,WHITE);
-        DrawText(TextFormat(" : %g %",copysign((ceilf(vol*100)),1.0f)), playground+cellSize, playground+offset+10+cellSize, 25, darkGreen);
-        
-        if(IsKeyPressed(KEY_R))
-        game.reset();
-        if(IsKeyPressed(KEY_O))
-        game.gameOver=true;
- 
         //Volume Controls   
         float tempVol;
         if(IsKeyPressed(KEY_KP_ADD) && vol < 1)
@@ -383,14 +426,28 @@ int main()
             SetSoundVolume(game.s_Wall,vol);
         }
 
+        //Drawing
+        if(!game.gameOver)
+            game.Draw();
+        DrawRectangleLinesEx(Rectangle{(float)offset-5,(float)offset-5,(float)playground+10,(float)playground+10},5,darkGreen);
+        DrawRectangleLinesEx(Rectangle{(float)offset-cellSize,(float)offset-cellSize,(float)playground+cellSize*2,(float)playground+cellSize*2},5,darkGreen);
+        DrawText(title, centerOf(center,title,35), 8, 35, darkGreen);
+        DrawText(TextFormat("%i",game.score),offset - cellSize + 5, offset + playground+cellSize+3, 40, darkGreen);
+        DrawTexture(((volPercentage==0)?volTexture[0]:(volPercentage>0&&volPercentage<40)?volTexture[1]:(volPercentage>=40&&volPercentage<70)?volTexture[2]:volTexture[3]),playground,playground+offset+10+cellSize,WHITE);
+        DrawText(TextFormat(" : %g %",copysign((ceilf(vol*100)),1.0f)), playground+cellSize, playground+offset+10+cellSize, 25, darkGreen);
+        
+        fps=GetFPS();
+        SetWindowTitle(TextFormat("Snake Game \t FPS : %d",fps));
 
+        //Game Over Screen
         if(game.gameOver)
         {
-            DrawText("Game Over",center-offset*2, center - 60, 60, darkGreen);
-            DrawText("Press R to Restart", center-offset*1.5, center + 5, 25, darkGreen);
-            DrawText("Press Esc to Quit", center-offset*1.35, center + 35, 25, darkGreen);
+            DrawText("Game Over",centerOf(center,(char *)"Game Over", 60), center - 60, 60, darkGreen);
+            DrawText("Press R to Restart", centerOf(center, (char *)"Press R to Restart",25), center + 5, 25, darkGreen);
+            DrawText("Press Esc to Quit", centerOf(center,(char *)"Press Esc to Quit",25), center + 35, 25, darkGreen);
         }
 
+        //Wall Rendering
         for(int i = 0; i<=cellCount+1; i++)
         {
             for(int j = 0; j<=cellCount+1; j++)
