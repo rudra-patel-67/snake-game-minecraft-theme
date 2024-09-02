@@ -2,6 +2,8 @@
 #include <lib\raylib.h>
 #include <deque>
 #include <lib\raymath.h>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 Color green = {173, 204, 96, 255};
@@ -46,7 +48,7 @@ int centerOf(int centerOfThis, char *text,int fSize)
 class Snake
 {
     public:
-        deque<Vector2> body = {Vector2{6,17},Vector2{5,17},Vector2{4,17}};
+        deque<Vector2> body = {Vector2{6,13},Vector2{5,13},Vector2{4,13}};
         Vector2 direction = {1,0};
         Texture2D texture, headTexture;
         int segmentToAdd=0;
@@ -83,29 +85,6 @@ class Snake
             }
         }
 
-        // void update()
-        // {
-        //     // for(int i = 1 ; i <= segmentToAdd ; i++)
-        //     if(segmentAdded<segmentToAdd && eventTriggered(0.2)){
-        //         body.emplace_back(Vector2Add(body[0],direction));
-        //         segmentAdded++;
-        //         return;
-        //     }        
-        //     if(segmentAdded>=segmentToAdd)
-        //     segmentToAdd=0;
-        //     Vector2 temp1 = body[0];
-        //     Vector2 temp2;
-        //     body[0].x+=direction.x;
-        //     body[0].y+=direction.y;
-        //     for(unsigned int i=1;i<body.size();i++)
-        //     {
-        //             temp2=body[i];
-        //             body[i]=temp1;
-        //             temp1=temp2;
-        //     }
-        //     // free(&temp2);
-        // }
-
         void update()
         {
             // Move the snake's head in the current direction
@@ -134,8 +113,11 @@ class Food
     Vector2 position;
     Texture2D villagerFTexture;
     Texture2D steveFTexture;
-    int count=0;
+    int count=1;
     bool ateSuperFood = false;
+    int min=3;
+    int max=6;
+    int randomCount=min+rand()%(max-min+1);
 
     Food(deque<Vector2> snakeBody)
     {
@@ -157,18 +139,19 @@ class Food
 
     void draw() 
     {
-        if(count==0)
-        DrawTextureEx(steveFTexture, Vector2Add({(float)offset-5, (float)offset-5}, Vector2Scale(position, (float)cellSize)), 0, 1.1, WHITE);
+        // cout<<"Count : "<<randomCount<<endl;
+        if(count==randomCount)
+        {
+            // cout<<randomCount<<endl;
+            DrawTextureEx(steveFTexture, Vector2Add({(float)offset-5, (float)offset-5}, Vector2Scale(position, (float)cellSize)), 0, 1.1, WHITE);
+        }
         else
         DrawTextureEx(villagerFTexture, Vector2Add({(float)offset, (float)offset}, Vector2Scale(position, (float)cellSize)), 0, 0.80, WHITE);
-            // DrawTextureEx(steveFTexture, Vector2Add({(float)offset, (float)offset}, Vector2Scale(position, (float)cellSize)), 0, 1.1, WHITE);
-        // DrawTexture(villagerFTexture,offset + position.x*cellSize, offset + position.y*cellSize,WHITE);
-        // DrawTextureEx(villagerFTexture, Vector2Add({(float)offset, (float)offset}, Vector2Scale(position, (float)cellSize)), 0, 0.75, WHITE);
     }
 
     void superFood()
     {
-        ateSuperFood=(count==0)?true:false;
+        ateSuperFood=(count==randomCount)?true:false;
     }
 
     Vector2 genRandomPos(deque<Vector2> snakeBody)
@@ -195,9 +178,12 @@ class Game
     Sound s_Wall = LoadSound("assets/audio/hit-the-wall.ogg");
     bool gameOver=false;
     int score=0;
-    int highScore;
+    int highScore=0;
     int timer = 0;
-    
+    int min = 5;
+    int max = 10;
+    int randomBonusScore = min + rand() % (max - min + 1);
+
     void Draw()
     {
         if(!gameOver)
@@ -211,6 +197,7 @@ class Game
     {
         if(!gameOver)
         {
+            cout<<randomBonusScore<<" "<<food.randomCount<<endl;
             snake.update();
             food.superFood();
             checkWall();
@@ -231,16 +218,20 @@ class Game
             PlaySound(s_Eat);
             if(food.ateSuperFood)
             {
-                // food.count=1;
-                snake.segmentToAdd=5;
+               
+                food.count=1;
+                food.randomCount=min+rand()%(max-min+1);
+                randomBonusScore = min + rand() % (max - min + 1);
+                snake.segmentToAdd=randomBonusScore;
                 // snake.update();
-                score+=5;
+                score+=randomBonusScore;
             }
             else
             {
+
                 snake.segmentToAdd = 1;
                 score++;
-                // food.count++;
+                food.count++;
             }
             food.position = food.genRandomPos(snake.body);
         }
@@ -254,6 +245,8 @@ class Game
             gameOver=true;
             cout<<endl<<"Hit the world border";
             displayScore();
+            if(score>highScore)
+            highScore=score;
         }
     }
 
@@ -266,6 +259,8 @@ class Game
             gameOver=true;
             cout<<endl<<"Self Collision";
             displayScore();
+            if(score>highScore)
+            highScore=score;
         }
     }
 
@@ -278,12 +273,12 @@ class Game
 
     void reset()
     {
-        snake.body = {Vector2{6,12},Vector2{5,12},Vector2{4,12}};
+        snake.body = {Vector2{6,13},Vector2{5,13},Vector2{4,13}};
         snake.direction = {1,0};
         food.position = food.genRandomPos(snake.body);
         gameOver=false;
         score=0;
-        food.count=0;
+        food.count=1;
     }
 };
 
@@ -296,7 +291,7 @@ void movement(Game &game)
             if(game.snake.direction.y !=1)
             game.snake.direction = {0,-1};
             break;
-        
+ 
         case (KEY_DOWN):
         case (KEY_S):
             if(game.snake.direction.y !=-1)
@@ -343,6 +338,8 @@ int main()
     const char *imgAssets[] = {"assets/volMute.png","assets/lowVol.png","assets/halfVol.png","assets/fullVol.png"};
     Texture2D volTexture[4];
     char title[]= "Zombie Siege x Minecraft";
+
+    srand(time(0));
     
     //Loading volume icon texture
     for(int i=0;i<4;i++){
@@ -433,8 +430,10 @@ int main()
         DrawRectangleLinesEx(Rectangle{(float)offset-cellSize,(float)offset-cellSize,(float)playground+cellSize*2,(float)playground+cellSize*2},5,darkGreen);
         DrawText(title, centerOf(center,title,35), 8, 35, darkGreen);
         DrawText(TextFormat("%i",game.score),offset - cellSize + 5, offset + playground+cellSize+3, 40, darkGreen);
-        DrawTexture(((volPercentage==0)?volTexture[0]:(volPercentage>0&&volPercentage<40)?volTexture[1]:(volPercentage>=40&&volPercentage<70)?volTexture[2]:volTexture[3]),playground,playground+offset+10+cellSize,WHITE);
-        DrawText(TextFormat(" : %g %",copysign((ceilf(vol*100)),1.0f)), playground+cellSize, playground+offset+10+cellSize, 25, darkGreen);
+        if(game.highScore>0)
+        DrawText(TextFormat("High Score : %i",game.highScore),centerOf(center,(char*)"High Score : XX",40), offset + playground+cellSize+3, 40, darkGreen);
+        DrawTexture(((volPercentage==0)?volTexture[0]:(volPercentage>0&&volPercentage<40)?volTexture[1]:(volPercentage>=40&&volPercentage<70)?volTexture[2]:volTexture[3]),playground+10,playground+offset+10+cellSize,WHITE);
+        DrawText(TextFormat(" : %g %",copysign((ceilf(vol*100)),1.0f)), playground+cellSize+10, playground+offset+10+cellSize, 25, darkGreen);
         
         fps=GetFPS();
         SetWindowTitle(TextFormat("Snake Game \t FPS : %d",fps));
