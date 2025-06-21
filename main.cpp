@@ -1,9 +1,14 @@
 #include <iostream>
-#include <lib\raylib.h>
 #include <deque>
-#include <lib\raymath.h>
 #include <cstdlib>
 #include <ctime>
+#ifdef _WIN32
+    #include "raylib.h"
+    #include <raymath.h>
+#else
+    #include "lib/raylib.h"
+    #include "lib/raymath.h"
+#endif
 using namespace std;
 
 Color green = {173, 204, 96, 255};
@@ -325,10 +330,9 @@ void movement(Game &game)
 
 int main() 
 {
-    int fps=GetFPS();
-    InitWindow(2*offset + playground, 2*offset + playground, TextFormat("Snake Game \t FPS : %d",fps));
+    InitWindow(2*offset + playground, 2*offset + playground, TextFormat("Snake Game"));
     InitAudioDevice();
-    // SetTargetFPS(1000);
+    SetTargetFPS(60);
     int frames = 0;
     bool gamePaused = false;
     Game game = Game();
@@ -435,8 +439,7 @@ int main()
         DrawTexture(((volPercentage==0)?volTexture[0]:(volPercentage>0&&volPercentage<40)?volTexture[1]:(volPercentage>=40&&volPercentage<70)?volTexture[2]:volTexture[3]),playground+10,playground+offset+10+cellSize,WHITE);
         DrawText(TextFormat(" : %g %",copysign((ceilf(vol*100)),1.0f)), playground+cellSize+10, playground+offset+10+cellSize, 25, darkGreen);
         
-        fps=GetFPS();
-        SetWindowTitle(TextFormat("Snake Game \t FPS : %d",fps));
+        SetWindowTitle(TextFormat("Snake Game \t Score : %d",game.score));
 
         //Game Over Screen
         if(game.gameOver)
